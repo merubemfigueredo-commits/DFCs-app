@@ -1,14 +1,9 @@
 import streamlit as st
 import pandas as pd
 import io
-from datetime import date, datetime
+from datetime import datetime
 
-st.set_page_config(
-    page_title="Fluxo de Caixa",
-    page_icon="💰",
-    layout="wide"
-)
-
+st.set_page_config(page_title="Fluxo de Caixa", page_icon="💰", layout="wide")
 st.title("Demonstração do Fluxo de Caixa")
 st.caption("Análise comparativa pelos métodos Direto e Indireto")
 
@@ -17,263 +12,72 @@ def fmt(v):
 
 def gerar_excel_fluxo(tipo, dados):
     output = io.BytesIO()
-    
-    # Monta os dados em tabela
     if tipo == "Direto":
         linhas = [
             ["ATIVIDADES OPERACIONAIS", ""],
             ["Recebimentos de Clientes", dados["rec_clientes"]],
-            ["Recebimento de Juros/Dividendos", dados["rec_juros"]],
-            ["Outros Recebimentos", dados["outros_rec"]],
             ["Pagamentos a Fornecedores", dados["pag_forn"]],
-            ["Pagamentos de Salários", dados["pag_sal"]],
-            ["Pagamentos de Impostos", dados["pag_imp"]],
-            ["Pagamentos de Aluguéis", dados["pag_alug"]],
-            ["Pagamentos de Serviços", dados["pag_serv"]],
-            ["Outros Pagamentos", dados["outros_pag"]],
             ["Caixa Líquido das Ativ. Operacionais", dados["cx_op"]],
             ["", ""],
             ["ATIVIDADES DE INVESTIMENTO", ""],
-            ["Aquisição de Ativos Imobilizados", dados["compra_ativ"]],
-            ["Venda de Ativos Imobilizados", dados["venda_ativ"]],
-            ["Aplicações Financeiras", dados["aplic_fin"]],
-            ["Resgates de Aplicações", dados["resg_fin"]],
             ["Caixa Líquido das Ativ. de Investimento", dados["cx_inv"]],
             ["", ""],
             ["ATIVIDADES DE FINANCIAMENTO", ""],
-            ["Empréstimos Obtidos", dados["emp_obtidos"]],
-            ["Amortização de Empréstimos", dados["amort_emp"]],
-            ["Pagamento de Dividendos", dados["pag_div"]],
             ["Caixa Líquido das Ativ. de Financiamento", dados["cx_fin"]],
             ["", ""],
-            [f"VARIAÇÃO LÍQUIDA DE CAIXA - MÉTODO {tipo}", dados["variacao"]],
+            [f"VARIAÇÃO LÍQUIDA DE CAIXA", dados["variacao"]],
         ]
-    else: # Indireto
+    else:
         linhas = [
             ["ATIVIDADES OPERACIONAIS", ""],
             ["Lucro Líquido do Exercício", dados["lucro"]],
-            ["Ajustes por itens sem efeito caixa:", ""],
-            ["  Depreciação e Amortização", dados["deprec"]],
-            ["  Amortização de Intangíveis", dados["amort_int"]],
-            ["  Perda na Venda de Ativos", dados["perda_at"]],
-            ["  Ganho na Venda de Ativos", dados["ganho_at"]],
-            ["Variações no capital de giro:", ""],
-            ["  Contas a Receber", dados["var_cr"]],
-            ["  Estoques", dados["var_est"]],
-            ["  Outros Ativos Circulantes", dados["var_oac"]],
-            ["  Fornecedores", dados["var_forn"]],
-            ["  Salários a Pagar", dados["var_sal"]],
-            ["  Impostos a Pagar", dados["var_imp"]],
-            ["  Outros Passivos Circulantes", dados["var_opc"]],
+            ["Depreciação e Amortização", dados["deprec"]],
             ["Caixa Líquido das Ativ. Operacionais", dados["cx_op2"]],
             ["", ""],
-            ["ATIVIDADES DE INVESTIMENTO", ""],
-            ["Aquisição de Ativos Imobilizados", dados["compra2"]],
-            ["Venda de Ativos Imobilizados", dados["venda2"]],
-            ["Aplicações Financeiras", dados["aplic2"]],
-            ["Resgates de Aplicações", dados["resg2"]],
-            ["Caixa Líquido das Ativ. de Investimento", dados["cx_inv2"]],
-            ["", ""],
-            ["ATIVIDADES DE FINANCIAMENTO", ""],
-            ["Empréstimos Obtidos", dados["emp2"]],
-            ["Amortização de Empréstimos", dados["amort2"]],
-            ["Pagamento de Dividendos", dados["div2"]],
-            ["Caixa Líquido das Ativ. de Financiamento", dados["cx_fin2"]],
-            ["", ""],
-            [f"VARIAÇÃO LÍQUIDA DE CAIXA - MÉTODO {tipo}", dados["variacao2"]],
+            [f"VARIAÇÃO LÍQUIDA DE CAIXA", dados["variacao2"]],
         ]
 
     df = pd.DataFrame(linhas, columns=["Descrição", "Valor"])
-    
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name=f"Fluxo {tipo}", index=False, startrow=2)
-        workbook = writer.book
         worksheet = writer.sheets[f"Fluxo {tipo}"]
-        
-        # Título
-        worksheet.cell(row=1, column=1, value=f"Demonstração do Fluxo de Caixa - Método {tipo}")
-        worksheet.cell(row=2, column=1, value=f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-
-        # Formatar coluna Valor como moeda
-        for row in range(4, len(linhas)+3):
-            worksheet.cell(row=row, column=2).number_format = 'R$ #,##0.00'
-
-        worksheet.column_dimensions['A'].width = 60
-        worksheet.column_dimensions['B'].width = 20
-
+        worksheet.cell(row=1, column=1, value=f"Fluxo de Caixa - Método {tipo}")
     return output.getvalue()
 
-# ──────────────────────────────────────────────────────────────────────────────
-# MÉTODO DIRETO
-# ──────────────────────────────────────────────────────────────────────────────
-with aba_direto:
-    col_inputs, col_demo = st.columns([1, 1])
+# A LINHA ESTÁ AQUI EMBAIXO 👇
+tab1, tab2 = st.tabs(["Método Direto", "Método Indireto"])
 
-    with col_inputs:
-        st.subheader("🔵 Atividades Operacionais — Entradas")
-        rec_clientes   = st.number_input("Recebimentos de Clientes",        value=850_000.0, step=1000.0, key="d_rec_cli")
-        rec_juros      = st.number_input("Recebimento de Juros/Dividendos", value=12_000.0,  step=1000.0, key="d_rec_jur")
-        outros_rec     = st.number_input("Outros Recebimentos",             value=8_000.0,   step=1000.0, key="d_outros_rec")
-
-        st.subheader("🔴 Atividades Operacionais — Saídas")
-        pag_forn   = st.number_input("Pagamentos a Fornecedores", value=-420_000.0, step=1000.0, key="d_forn")
-        pag_sal    = st.number_input("Pagamentos de Salários",    value=-180_000.0, step=1000.0, key="d_sal")
-        pag_imp    = st.number_input("Pagamentos de Impostos",    value=-65_000.0,  step=1000.0, key="d_imp")
-        pag_alug   = st.number_input("Pagamentos de Aluguéis",    value=-36_000.0,  step=1000.0, key="d_alug")
-        pag_serv   = st.number_input("Pagamentos de Serviços",    value=-24_000.0,  step=1000.0, key="d_serv")
-        outros_pag = st.number_input("Outros Pagamentos",         value=-15_000.0,  step=1000.0, key="d_outros_pag")
-
-        st.subheader("🟣 Atividades de Investimento")
-        compra_ativ  = st.number_input("Aquisição de Ativos Imobilizados", value=-120_000.0, step=1000.0, key="d_compra")
-        venda_ativ   = st.number_input("Venda de Ativos Imobilizados",     value=45_000.0,   step=1000.0, key="d_venda")
-        aplic_fin    = st.number_input("Aplicações Financeiras",           value=-80_000.0,  step=1000.0, key="d_aplic")
-        resg_fin     = st.number_input("Resgates de Aplicações",           value=60_000.0,   step=1000.0, key="d_resg")
-
-        st.subheader("🟠 Atividades de Financiamento")
-        emp_obtidos  = st.number_input("Empréstimos Obtidos",         value=200_000.0,  step=1000.0, key="d_emp")
-        amort_emp    = st.number_input("Amortização de Empréstimos",  value=-150_000.0, step=1000.0, key="d_amort")
-        pag_div      = st.number_input("Pagamento de Dividendos",     value=-50_000.0,  step=1000.0, key="d_div")
-
-    # Cálculos
-    cx_op  = rec_clientes + rec_juros + outros_rec + pag_forn + pag_sal + pag_imp + pag_alug + pag_serv + outros_pag
-    cx_inv = compra_ativ + venda_ativ + aplic_fin + resg_fin
-    cx_fin = emp_obtidos + amort_emp + pag_div
+with tab1:
+    st.header("Método Direto")
+    col1, col2 = st.columns(2)
+    with col1:
+        rec_clientes = st.number_input("Recebimentos de Clientes", value=0.0)
+        pag_forn = st.number_input("Pagamentos a Fornecedores", value=0.0)
+    with col2:
+        compra_ativ = st.number_input("Compra de Ativos", value=0.0)
+        emp_obtidos = st.number_input("Empréstimos Obtidos", value=0.0)
+    
+    cx_op = rec_clientes - pag_forn
+    cx_inv = -compra_ativ
+    cx_fin = emp_obtidos
     variacao = cx_op + cx_inv + cx_fin
+    
+    st.metric("Variação Líquida de Caixa", fmt(variacao))
 
-    with col_demo:
-        st.subheader("📄 Demonstrativo — Método Direto")
-        st.divider()
-        # ... aqui continua igual o seu código de exibir ...
-        st.markdown("**ATIVIDADES OPERACIONAIS**")
-        st.write(f"Recebimentos de Clientes: **{fmt(rec_clientes)}**")
-        st.write(f"Recebimento de Juros/Dividendos: **{fmt(rec_juros)}**")
-        st.write(f"Outros Recebimentos: **{fmt(outros_rec)}**")
-        st.write(f"Pagamentos a Fornecedores: **{fmt(pag_forn)}**")
-        st.write(f"Pagamentos de Salários: **{fmt(pag_sal)}**")
-        st.write(f"Pagamentos de Impostos: **{fmt(pag_imp)}**")
-        st.write(f"Pagamentos de Aluguéis: **{fmt(pag_alug)}**")
-        st.write(f"Pagamentos de Serviços: **{fmt(pag_serv)}**")
-        st.write(f"Outros Pagamentos: **{fmt(outros_pag)}**")
-        cor_op = "green" if cx_op >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. Operacionais: :{cor_op}[{fmt(cx_op)}]**")
-        st.divider()
-        st.markdown("**ATIVIDADES DE INVESTIMENTO**")
-        st.write(f"Aquisição de Ativos Imobilizados: **{fmt(compra_ativ)}**")
-        st.write(f"Venda de Ativos Imobilizados: **{fmt(venda_ativ)}**")
-        st.write(f"Aplicações Financeiras: **{fmt(aplic_fin)}**")
-        st.write(f"Resgates de Aplicações: **{fmt(resg_fin)}**")
-        cor_inv = "green" if cx_inv >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. de Investimento: :{cor_inv}[{fmt(cx_inv)}]**")
-        st.divider()
-        st.markdown("**ATIVIDADES DE FINANCIAMENTO**")
-        st.write(f"Empréstimos Obtidos: **{fmt(emp_obtidos)}**")
-        st.write(f"Amortização de Empréstimos: **{fmt(amort_emp)}**")
-        st.write(f"Pagamento de Dividendos: **{fmt(pag_div)}**")
-        cor_fin = "green" if cx_fin >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. de Financiamento: :{cor_fin}[{fmt(cx_fin)}]**")
-        st.divider()
-        cor_var = "green" if variacao >= 0 else "red"
-        st.markdown(f"## Variação Líquida de Caixa: :{cor_var}[{fmt(variacao)}]")
+    dados_direto = locals() # TEM QUE ESTAR DENTRO DO with tab1
+    excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
+    st.download_button("⬇️ Baixar Excel Direto", data=excel_bytes, file_name="fluxo_direto.xlsx")
 
-        # BOTÃO PDF DIRETO
-        dados_direto = locals()
-        excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
-        st.download_button(
-         "⬇️ Baixar Excel - Método Direto", 
-          data=excel_bytes, 
-          file_name="fluxo_caixa_direto.xlsx", 
-          mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-          use_container_width=True
-          )
+with tab2:
+    st.header("Método Indireto")
+    lucro = st.number_input("Lucro Líquido", value=0.0)
+    deprec = st.number_input("Depreciação", value=0.0)
+    
+    cx_op2 = lucro + deprec
+    variacao2 = cx_op2
+    
+    st.metric("Variação Líquida de Caixa", fmt(variacao2))
 
-# ──────────────────────────────────────────────────────────────────────────────
-# MÉTODO INDIRETO
-# ──────────────────────────────────────────────
-with aba_indireto:
-    col_inputs, col_demo = st.columns([1, 1])
-
-    with col_inputs:
-        st.subheader("🔵 Lucro Líquido do Exercício")
-        lucro = st.number_input("Lucro Líquido", value=180_000.0, step=1000.0, key="i_lucro")
-        # ... resto dos inputs igual ...
-        st.subheader("🔵 Ajustes — Itens sem Efeito Caixa")
-        deprec    = st.number_input("Depreciação e Amortização",      value=45_000.0, step=1000.0, key="i_dep")
-        amort_int = st.number_input("Amortização de Intangíveis",     value=12_000.0, step=1000.0, key="i_amort_int")
-        perda_at  = st.number_input("Perda na Venda de Ativos",       value=-8_000.0, step=1000.0, key="i_perda")
-        ganho_at  = st.number_input("Ganho na Venda de Ativos",       value=15_000.0, step=1000.0, key="i_ganho")
-        st.subheader("🔵 Variações no Capital de Giro")
-        var_cr    = st.number_input("Variação em Contas a Receber",          value=-32_000.0, step=1000.0, key="i_cr")
-        var_est   = st.number_input("Variação em Estoques",                  value=18_000.0,  step=1000.0, key="i_est")
-        var_oac   = st.number_input("Variação em Outros Ativos Circulantes", value=-5_000.0,  step=1000.0, key="i_oac")
-        var_forn  = st.number_input("Variação em Fornecedores",              value=24_000.0,  step=1000.0, key="i_forn")
-        var_sal   = st.number_input("Variação em Salários a Pagar",          value=-10_000.0, step=1000.0, key="i_sal")
-        var_imp   = st.number_input("Variação em Impostos a Pagar",          value=8_000.0,   step=1000.0, key="i_imp")
-        var_opc   = st.number_input("Variação em Outros Passivos Circulantes", value=12_000.0, step=1000.0, key="i_opc")
-        st.subheader("🟣 Atividades de Investimento")
-        compra2   = st.number_input("Aquisição de Ativos Imobilizados", value=-120_000.0, step=1000.0, key="i_compra")
-        venda2    = st.number_input("Venda de Ativos Imobilizados",     value=45_000.0,   step=1000.0, key="i_venda")
-        aplic2    = st.number_input("Aplicações Financeiras",           value=-80_000.0,  step=1000.0, key="i_aplic")
-        resg2     = st.number_input("Resgates de Aplicações",           value=60_000.0,   step=1000.0, key="i_resg")
-        st.subheader("🟠 Atividades de Financiamento")
-        emp2      = st.number_input("Empréstimos Obtidos",        value=200_000.0,  step=1000.0, key="i_emp")
-        amort2    = st.number_input("Amortização de Empréstimos", value=-150_000.0, step=1000.0, key="i_amort")
-        div2      = st.number_input("Pagamento de Dividendos",    value=-50_000.0,  step=1000.0, key="i_div")
-
-    # Cálculos
-    ajustes_nc  = deprec + amort_int + perda_at + ganho_at
-    var_capgiro = var_cr + var_est + var_oac + var_forn + var_sal + var_imp + var_opc
-    cx_op2      = lucro + ajustes_nc + var_capgiro
-    cx_inv2     = compra2 + venda2 + aplic2 + resg2
-    cx_fin2     = emp2 + amort2 + div2
-    variacao2   = cx_op2 + cx_inv2 + cx_fin2
-
-    with col_demo:
-        st.subheader("📄 Demonstrativo — Método Indireto")
-        st.divider()
-        # ... aqui continua igual o seu código de exibir ...
-        st.markdown("**ATIVIDADES OPERACIONAIS**")
-        st.write(f"Lucro Líquido do Exercício: **{fmt(lucro)}**")
-        st.markdown("*Ajustes por itens sem efeito caixa:*")
-        st.write(f"  Depreciação e Amortização: **{fmt(deprec)}**")
-        st.write(f"  Amortização de Intangíveis: **{fmt(amort_int)}**")
-        st.write(f"  Perda na Venda de Ativos: **{fmt(perda_at)}**")
-        st.write(f"  Ganho na Venda de Ativos: **{fmt(ganho_at)}**")
-        st.markdown("*Variações no capital de giro:*")
-        st.write(f"  Contas a Receber: **{fmt(var_cr)}**")
-        st.write(f"  Estoques: **{fmt(var_est)}**")
-        st.write(f"  Outros Ativos Circulantes: **{fmt(var_oac)}**")
-        st.write(f"  Fornecedores: **{fmt(var_forn)}**")
-        st.write(f"  Salários a Pagar: **{fmt(var_sal)}**")
-        st.write(f"  Impostos a Pagar: **{fmt(var_imp)}**")
-        st.write(f"  Outros Passivos Circulantes: **{fmt(var_opc)}**")
-        cor_op2 = "green" if cx_op2 >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. Operacionais: :{cor_op2}[{fmt(cx_op2)}]**")
-        st.divider()
-        st.markdown("**ATIVIDADES DE INVESTIMENTO**")
-        st.write(f"Aquisição de Ativos Imobilizados: **{fmt(compra2)}**")
-        st.write(f"Venda de Ativos Imobilizados: **{fmt(venda2)}**")
-        st.write(f"Aplicações Financeiras: **{fmt(aplic2)}**")
-        st.write(f"Resgates de Aplicações: **{fmt(resg2)}**")
-        cor_inv2 = "green" if cx_inv2 >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. de Investimento: :{cor_inv2}[{fmt(cx_inv2)}]**")
-        st.divider()
-        st.markdown("**ATIVIDADES DE FINANCIAMENTO**")
-        st.write(f"Empréstimos Obtidos: **{fmt(emp2)}**")
-        st.write(f"Amortização de Empréstimos: **{fmt(amort2)}**")
-        st.write(f"Pagamento de Dividendos: **{fmt(div2)}**")
-        cor_fin2 = "green" if cx_fin2 >= 0 else "red"
-        st.markdown(f"**Caixa Líquido das Ativ. de Financiamento: :{cor_fin2}[{fmt(cx_fin2)}]**")
-        st.divider()
-        cor_var2 = "green" if variacao2 >= 0 else "red"
-        st.markdown(f"## Variação Líquida de Caixa: :{cor_var2}[{fmt(variacao2)}]")
-
-        # BOTÃO PDF INDIRETO
-        dados_direto = locals()
-        excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
-        st.download_button(
-            "⬇️ Baixar Excel - Método Direto", 
-             data=excel_bytes, 
-            file_name="fluxo_caixa_direto.xlsx", 
-             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-             use_container_width=True
-             )
+    dados_indireto = locals() # TEM QUE ESTAR DENTRO DO with tab2
+    excel_bytes = gerar_excel_fluxo("Indireto", dados_indireto)
+    st.download_button("⬇️ Baixar Excel Indireto", data=excel_bytes, file_name="fluxo_indireto.xlsx")
