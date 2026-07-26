@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import io
 from datetime import date, datetime
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
 
 st.set_page_config(
     page_title="Fluxo de Caixa",
@@ -18,95 +15,93 @@ st.caption("Análise comparativa pelos métodos Direto e Indireto")
 def fmt(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-def safe(text): # pra tratar acentos no fpdf
-    return str(text).encode("latin-1", "replace").decode("latin-1")
-
-def gerar_pdf_fluxo(tipo, dados):
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+def gerar_excel_fluxo(tipo, dados):
+    output = io.BytesIO()
     
-    y = height - 20*mm # posição inicial
-
-    # Título
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width/2, y, f"Demonstração do Fluxo de Caixa - Método {tipo}")
-    y -= 8*mm
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(width/2, y, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-    y -= 10*mm
-
-    def secao(titulo):
-        nonlocal y
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(15*mm, y, titulo)
-        y -= 7*mm
-        c.setFont("Helvetica", 10)
-
-    def linha(desc, valor, bold=False):
-        nonlocal y
-        font = "Helvetica-Bold" if bold else "Helvetica"
-        c.setFont(font, 10)
-        c.drawString(20*mm, y, desc)
-        c.drawRightString(width - 15*mm, y, fmt(valor))
-        y -= 6*mm
-
+    # Monta os dados em tabela
     if tipo == "Direto":
-        secao("ATIVIDADES OPERACIONAIS")
-        linha("Recebimentos de Clientes", dados["rec_clientes"])
-        linha("Recebimento de Juros/Dividendos", dados["rec_juros"])
-        linha("Outros Recebimentos", dados["outros_rec"])
-        linha("Pagamentos a Fornecedores", dados["pag_forn"])
-        linha("Pagamentos de Salários", dados["pag_sal"])
-        linha("Pagamentos de Impostos", dados["pag_imp"])
-        linha("Pagamentos de Aluguéis", dados["pag_alug"])
-        linha("Pagamentos de Serviços", dados["pag_serv"])
-        linha("Outros Pagamentos", dados["outros_pag"])
-        y -= 2*mm
-        linha("Caixa Líquido das Ativ. Operacionais", dados["cx_op"], bold=True)
-        y -= 6*mm
-        # ... continua igual pra Investimento e Financiamento
-        secao("ATIVIDADES DE INVESTIMENTO")
-        linha("Aquisição de Ativos Imobilizados", dados["compra_ativ"])
-        linha("Venda de Ativos Imobilizados", dados["venda_ativ"])
-        linha("Aplicações Financeiras", dados["aplic_fin"])
-        linha("Resgates de Aplicações", dados["resg_fin"])
-        y -= 2*mm
-        linha("Caixa Líquido das Ativ. de Investimento", dados["cx_inv"], bold=True)
-        y -= 6*mm
-        secao("ATIVIDADES DE FINANCIAMENTO")
-        linha("Empréstimos Obtidos", dados["emp_obtidos"])
-        linha("Amortização de Empréstimos", dados["amort_emp"])
-        linha("Pagamento de Dividendos", dados["pag_div"])
-        y -= 2*mm
-        linha("Caixa Líquido das Ativ. de Financiamento", dados["cx_fin"], bold=True)
-
+        linhas = [
+            ["ATIVIDADES OPERACIONAIS", ""],
+            ["Recebimentos de Clientes", dados["rec_clientes"]],
+            ["Recebimento de Juros/Dividendos", dados["rec_juros"]],
+            ["Outros Recebimentos", dados["outros_rec"]],
+            ["Pagamentos a Fornecedores", dados["pag_forn"]],
+            ["Pagamentos de Salários", dados["pag_sal"]],
+            ["Pagamentos de Impostos", dados["pag_imp"]],
+            ["Pagamentos de Aluguéis", dados["pag_alug"]],
+            ["Pagamentos de Serviços", dados["pag_serv"]],
+            ["Outros Pagamentos", dados["outros_pag"]],
+            ["Caixa Líquido das Ativ. Operacionais", dados["cx_op"]],
+            ["", ""],
+            ["ATIVIDADES DE INVESTIMENTO", ""],
+            ["Aquisição de Ativos Imobilizados", dados["compra_ativ"]],
+            ["Venda de Ativos Imobilizados", dados["venda_ativ"]],
+            ["Aplicações Financeiras", dados["aplic_fin"]],
+            ["Resgates de Aplicações", dados["resg_fin"]],
+            ["Caixa Líquido das Ativ. de Investimento", dados["cx_inv"]],
+            ["", ""],
+            ["ATIVIDADES DE FINANCIAMENTO", ""],
+            ["Empréstimos Obtidos", dados["emp_obtidos"]],
+            ["Amortização de Empréstimos", dados["amort_emp"]],
+            ["Pagamento de Dividendos", dados["pag_div"]],
+            ["Caixa Líquido das Ativ. de Financiamento", dados["cx_fin"]],
+            ["", ""],
+            [f"VARIAÇÃO LÍQUIDA DE CAIXA - MÉTODO {tipo}", dados["variacao"]],
+        ]
     else: # Indireto
-        secao("ATIVIDADES OPERACIONAIS")
-        linha("Lucro Líquido do Exercício", dados["lucro"])
-        c.setFont("Helvetica-Oblique", 9)
-        c.drawString(20*mm, y, "Ajustes por itens sem efeito caixa:")
-        y -= 6*mm
-        c.setFont("Helvetica", 10)
-        linha("  Depreciação e Amortização", dados["deprec"])
-        linha("  Amortização de Intangíveis", dados["amort_int"])
-        linha("  Perda na Venda de Ativos", dados["perda_at"])
-        linha("  Ganho na Venda de Ativos", dados["ganho_at"])
-        # ... resto igual ...
-        linha("Caixa Líquido das Ativ. Operacionais", dados["cx_op2"], bold=True)
-        # ... Investimento e Financiamento ...
-    
-    y -= 4*mm
-    c.line(15*mm, y, width-15*mm, y)
-    y -= 6*mm
-    c.setFont("Helvetica-Bold", 12)
-    linha(f"Variação Líquida de Caixa - Método {tipo}", dados["variacao"], bold=True)
+        linhas = [
+            ["ATIVIDADES OPERACIONAIS", ""],
+            ["Lucro Líquido do Exercício", dados["lucro"]],
+            ["Ajustes por itens sem efeito caixa:", ""],
+            ["  Depreciação e Amortização", dados["deprec"]],
+            ["  Amortização de Intangíveis", dados["amort_int"]],
+            ["  Perda na Venda de Ativos", dados["perda_at"]],
+            ["  Ganho na Venda de Ativos", dados["ganho_at"]],
+            ["Variações no capital de giro:", ""],
+            ["  Contas a Receber", dados["var_cr"]],
+            ["  Estoques", dados["var_est"]],
+            ["  Outros Ativos Circulantes", dados["var_oac"]],
+            ["  Fornecedores", dados["var_forn"]],
+            ["  Salários a Pagar", dados["var_sal"]],
+            ["  Impostos a Pagar", dados["var_imp"]],
+            ["  Outros Passivos Circulantes", dados["var_opc"]],
+            ["Caixa Líquido das Ativ. Operacionais", dados["cx_op2"]],
+            ["", ""],
+            ["ATIVIDADES DE INVESTIMENTO", ""],
+            ["Aquisição de Ativos Imobilizados", dados["compra2"]],
+            ["Venda de Ativos Imobilizados", dados["venda2"]],
+            ["Aplicações Financeiras", dados["aplic2"]],
+            ["Resgates de Aplicações", dados["resg2"]],
+            ["Caixa Líquido das Ativ. de Investimento", dados["cx_inv2"]],
+            ["", ""],
+            ["ATIVIDADES DE FINANCIAMENTO", ""],
+            ["Empréstimos Obtidos", dados["emp2"]],
+            ["Amortização de Empréstimos", dados["amort2"]],
+            ["Pagamento de Dividendos", dados["div2"]],
+            ["Caixa Líquido das Ativ. de Financiamento", dados["cx_fin2"]],
+            ["", ""],
+            [f"VARIAÇÃO LÍQUIDA DE CAIXA - MÉTODO {tipo}", dados["variacao2"]],
+        ]
 
-    c.showPage()
-    c.save()
-    return buffer.getvalue()
+    df = pd.DataFrame(linhas, columns=["Descrição", "Valor"])
     
-aba_direto, aba_indireto = st.tabs(["Método Direto", "Método Indireto"])
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name=f"Fluxo {tipo}", index=False, startrow=2)
+        workbook = writer.book
+        worksheet = writer.sheets[f"Fluxo {tipo}"]
+        
+        # Título
+        worksheet.cell(row=1, column=1, value=f"Demonstração do Fluxo de Caixa - Método {tipo}")
+        worksheet.cell(row=2, column=1, value=f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
+        # Formatar coluna Valor como moeda
+        for row in range(4, len(linhas)+3):
+            worksheet.cell(row=row, column=2).number_format = 'R$ #,##0.00'
+
+        worksheet.column_dimensions['A'].width = 60
+        worksheet.column_dimensions['B'].width = 20
+
+    return output.getvalue()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MÉTODO DIRETO
@@ -181,10 +176,15 @@ with aba_direto:
         st.markdown(f"## Variação Líquida de Caixa: :{cor_var}[{fmt(variacao)}]")
 
         # BOTÃO PDF DIRETO
-        dados_direto = locals()
-        pdf_bytes = gerar_pdf_fluxo("Direto", dados_direto)
-        buffer = io.BytesIO(pdf_bytes)
-        st.download_button("⬇️ Baixar PDF - Método Direto", data=buffer, file_name="fluxo_caixa_direto.pdf", mime="application/pdf", use_container_width=True)
+       dados_direto = locals()
+       excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
+       st.download_button(
+         "⬇️ Baixar Excel - Método Direto", 
+          data=excel_bytes, 
+          file_name="fluxo_caixa_direto.xlsx", 
+          mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+          use_container_width=True
+          )
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MÉTODO INDIRETO
@@ -268,7 +268,12 @@ with aba_indireto:
         st.markdown(f"## Variação Líquida de Caixa: :{cor_var2}[{fmt(variacao2)}]")
 
         # BOTÃO PDF INDIRETO
-        dados_indireto = locals()
-        pdf_bytes = gerar_pdf_fluxo("Indireto", dados_indireto)
-        buffer = io.BytesIO(pdf_bytes)
-        st.download_button("⬇️ Baixar PDF - Método Indireto", data=buffer, file_name="fluxo_caixa_indireto.pdf", mime="application/pdf", use_container_width=True)
+        dados_direto = locals()
+        excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
+        st.download_button(
+            "⬇️ Baixar Excel - Método Direto", 
+             data=excel_bytes, 
+            file_name="fluxo_caixa_direto.xlsx", 
+             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+             use_container_width=True
+             )
