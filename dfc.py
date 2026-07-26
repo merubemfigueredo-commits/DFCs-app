@@ -176,9 +176,9 @@ with aba_direto:
         st.markdown(f"## Variação Líquida de Caixa: :{cor_var}[{fmt(variacao)}]")
 
         # BOTÃO PDF DIRETO
-      dados_direto = locals()
-      excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
-      st.download_button(
+       dados_direto = locals()
+       excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
+       st.download_button(
          "⬇️ Baixar Excel - Método Direto", 
           data=excel_bytes, 
           file_name="fluxo_caixa_direto.xlsx", 
@@ -268,9 +268,9 @@ with aba_indireto:
         st.markdown(f"## Variação Líquida de Caixa: :{cor_var2}[{fmt(variacao2)}]")
 
         # BOTÃO PDF INDIRETO
-     dados_direto = locals()
-     excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
-     st.download_button(
+      dados_direto = locals()
+      excel_bytes = gerar_excel_fluxo("Direto", dados_direto)
+      st.download_button(
             "⬇️ Baixar Excel - Método Direto", 
              data=excel_bytes, 
             file_name="fluxo_caixa_direto.xlsx", 
