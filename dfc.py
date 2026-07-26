@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
+from datetime import date, datetime
 from fpdf import FPDF
 import io
-from datetime import date, datetime
 
 st.set_page_config(
     page_title="Fluxo de Caixa",
