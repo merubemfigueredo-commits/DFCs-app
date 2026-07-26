@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, datetime
 import io
+from datetime import date, datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
 
 st.set_page_config(
     page_title="Fluxo de Caixa",
