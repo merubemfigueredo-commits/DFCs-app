@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
-from fpdf import FPDF
+try:
+    from fpdf import FPDF
+except ImportError:
+    from fpdf2 import FPDF
 import io
 
 st.set_page_config(
