@@ -1,7 +1,3 @@
-# app.py
-# Instale com: pip install streamlit
-# Execute com: streamlit run app.py
-
 import streamlit as st
 
 st.set_page_config(
@@ -180,3 +176,58 @@ with aba_indireto:
 
         cor_var2 = "green" if variacao2 >= 0 else "red"
         st.markdown(f"## Variação Líquida de Caixa: :{cor_var2}[{fmt(variacao2)}]")
+        #---------------------------------------------------------------
+def gerar_pdf(metodo, operacionais, investimentos, financiamentos, variacao):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"DFC - {metodo}", ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Atividades Operacionais: R$ {operacionais:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Atividades de Investimento: R$ {investimentos:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Atividades de Financiamento: R$ {financiamentos:,.2f}", ln=True)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, f"Variação Líquida de Caixa: R$ {variacao:,.2f}", ln=True)
+    
+    return pdf.output(dest='S').encode('latin-1')
+
+# --- MÉTODO DIRETO ---
+with aba_direto: # [1]
+    col_inputs, col_demo = st.columns([1]) # [1]
+    with col_inputs:
+        st.subheader("Entradas de Dados")
+        op = st.number_input("Total Operacional (Direto)", value=1000.0)
+        inv = st.number_input("Total Investimento (Direto)", value=-500.0)
+        fin = st.number_input("Total Financiamento (Direto)", value=200.0)
+        total = op + inv + fin
+
+    with col_demo:
+        st.write(f"**Variação de Caixa:** R$ {total:,.2f}")
+        pdf_data = gerar_pdf("Método Direto", op, inv, fin, total)
+        st.download_button(
+            label="📄 Baixar PDF - Método Direto",
+            data=pdf_data,
+            file_name="DFC_Direto.pdf",
+            mime="application/pdf"
+        )
+# --- MÉTODO INDIRETO ---
+with aba_indireto: # [2]
+    col_inputs, col_demo = st.columns([1]) # [2]
+    with col_inputs:
+        st.subheader("Entradas de Dados")
+        op_i = st.number_input("Total Operacional (Indireto)", value=1100.0)
+        inv_i = st.number_input("Total Investimento (Indireto)", value=-500.0)
+        fin_i = st.number_input("Total Financiamento (Indireto)", value=200.0)
+        total_i = op_i + inv_i + fin_i
+
+    with col_demo:
+        st.write(f"**Variação de Caixa:** R$ {total_i:,.2f}")
+        pdf_data_i = gerar_pdf("Método Indireto", op_i, inv_i, fin_i, total_i)
+        st.download_button(
+            label="📄 Baixar PDF - Método Indireto",
+            data=pdf_data_i,
+            file_name="DFC_Indireto.pdf",
+            mime="application/pdf"
+        )
