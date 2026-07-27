@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 from datetime import datetime
-import openpyxl
+from openpyxl import Workbook, load_workbook
 
 st.set_page_config(page_title="Fluxo de Caixa", page_icon="💰", layout="wide")
 st.title("Demonstração do Fluxo de Caixa")
